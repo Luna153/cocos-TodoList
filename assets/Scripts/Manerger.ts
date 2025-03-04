@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, director, EditBox, instantiate, Label, Node, Sprite, SpriteFrame, Toggle, Animation } from 'cc';
+import { _decorator, Button, Component, director, EditBox, instantiate, Label, Node, Sprite, SpriteFrame, Toggle, Animation, tween, Vec3, Tween } from 'cc';
 import { Global } from './Global';
 const { ccclass, property } = _decorator;
 
@@ -30,10 +30,10 @@ export class Manerger extends Component {
 
     @property(Button)
     private addBtn: Button = null;
-    @property(Button)
-    private deleteCancelBtn: Button = null;
-    @property(Button)
-    private deleteConfirmBtn: Button = null;
+    // @property(Button)
+    // private deleteCancelBtn: Button = null;
+    // @property(Button)
+    // private deleteConfirmBtn: Button = null;
 
     @property(Label)
     private userName: Label = null;
@@ -51,6 +51,8 @@ export class Manerger extends Component {
 
     public deleteState = 0;
 
+    private ws:WebSocket; // WebSocket 連接
+
 
 
     setCheckState() {
@@ -62,6 +64,37 @@ export class Manerger extends Component {
         this.listItemPrefab.active = false;
         this.DeleteMenu.active = false;
         this.InputMenu.active = false;
+
+        // 呼叫websocket
+        // this.wss();
+    }
+
+    // 使用websocket串接api
+    wss(){
+        // wsUrl: 要連接的網址
+        this.ws = new WebSocket("ws://124.222.224.186:8800");
+
+        // 接受後端傳來的消息(event)
+        this.ws.onmessage = (event) => {
+            console.log(`websock 後端訊息: ${event.data}`)
+        }
+
+        //成功連上
+        this.ws.onopen = (event) => {
+            console.log(`websock 連線成功: ${event}`)
+            // 後端回傳資料send
+            this.ws.send("ABC");
+        }
+        
+        // 出現網路錯誤
+        this.ws.onerror = (event) => {
+            console.log(`websock 連線錯誤: ${event}`)
+        }
+        
+        // ws連線關閉
+        this.ws.onclose = (event) => {
+            console.log(`websock 連線關閉: ${event}`)
+        }
     }
 
     protected onLoad(): void {
@@ -69,6 +102,7 @@ export class Manerger extends Component {
         // this.deleteCancelBtn.node.on(Button.EventType.CLICK, this.onDeleteCancel, this)
         // this.deleteConfirmBtn.node.on(Button.EventType.CLICK, this.onDeleteConfirm, this)
     }
+
 
     // 輸入框訊息
     onInputWarn() {
@@ -106,7 +140,7 @@ export class Manerger extends Component {
             this.addCount++;
 
             // 製作Prefab
-            const list = instantiate(this.listItemPrefab);
+            let list = instantiate(this.listItemPrefab);
             list.children[1].getComponent(Label).string = this.addInput.string;
             list.children[0].getComponent(Toggle).isChecked = false;
             // console.log(list.active)
@@ -115,11 +149,22 @@ export class Manerger extends Component {
             // list.setPosition(0, this.addCount * -60, 0);
             list.setParent(this.listItemPrefab.parent);
 
+
+
             // 設定ListItem編號
             list.children[2].getComponent(Button).clickEvents[0].customEventData = (this.addCount).toString();
 
             // add 次數
             list.active = true;
+            // 動畫
+            tween(list)
+                .to(0.5, { scale: new Vec3(1, 1, 1) })
+                .start();
+
+
+            // console.log(list.scale)
+            // Tween.stopAll();
+
             // clear input string
             this.addInput.string = "";
 
@@ -132,6 +177,10 @@ export class Manerger extends Component {
         }
 
 
+        // .to(duration, {position: targetPos}, {easing: 'smooth'})
+
+
+
 
         // list.children[2].getComponent(Label).string = "5"
         // list.getChildByName('Item').getComponent(Label).string = "5"
@@ -139,10 +188,12 @@ export class Manerger extends Component {
 
     }
 
-    setDeleteState(event: Event, customData: string){
+    setDeleteState(event: Event, customData: string) {
         this.DeleteMenu.active = true;
         // this.deleteEvent = event;
         this.deleteCustomData = customData;
+        // console.log(`刪除=> deleteCustomData: 第${this.deleteCustomData}個Item`)
+
     }
 
     // 刪除代辦
@@ -196,17 +247,26 @@ export class Manerger extends Component {
 
             this.listItemPrefab.parent.children[this.deleteCustomData].destroy();
 
+            // 動畫
+            // tween(this.listItemPrefab.parent.children[this.deleteCustomData])
+            //     .to(0, { scale: new Vec3(1, 0, 0) })
+            //     .start();
+            // console.log(`確認deleteCustomData: 刪掉第${this.deleteCustomData}個Item`)
+            // console.log(`所有Item索引值:`)
             for (let i = Number(this.deleteCustomData); i < this.addCount; i++) {
+                // console.log(`回圈內addCount: ${this.addCount}`)
                 // this.listItemPrefab.parent.children[i].destroy();
                 // console.log(i)
                 // console.log(this.content.children[i].children[1].getComponent(Label).string);
 
                 // 所有customData後的編號 -1
                 this.content.children[i + 1].children[2].getComponent(Button).clickEvents[0].customEventData = i.toString();
-
-                this.addCount--;
-
+                console.log(`i=: ${i}`)
+                // console.log(`i+1=: ${i}`)
             }
+            this.addCount--;
+            // console.log(`迴圈結束: 目前共有${this.addCount}個`)
+
         } else {
             // console.log("最後一個數")
             this.listItemPrefab.parent.children[this.deleteCustomData].destroy();
@@ -233,7 +293,7 @@ export class Manerger extends Component {
     //     this.targetDel.destroy();
     //     // 關閉deleteMenu
     //     this.DeleteMenu.active = false;
-        
+
     // }
 
 }
