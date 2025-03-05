@@ -1,5 +1,6 @@
 import { _decorator, Button, Component, director, EditBox, instantiate, Label, Node, Sprite, SpriteFrame, Toggle, Animation, tween, Vec3, Tween } from 'cc';
 import { Global } from './Global';
+import { LocalizedLabel } from 'db://i18n/LocalizedLabel';
 const { ccclass, property } = _decorator;
 
 // enum DeleteState {
@@ -38,9 +39,11 @@ export class Manerger extends Component {
     @property(Label)
     private userName: Label = null;
 
-
     @property(SpriteFrame)
     private avatarAlbum: SpriteFrame[] = [];
+
+    @property(LocalizedLabel)
+    private warningText: LocalizedLabel = null;
 
 
     // @property
@@ -51,7 +54,7 @@ export class Manerger extends Component {
 
     public deleteState = 0;
 
-    private ws:WebSocket; // WebSocket 連接
+    private ws: WebSocket; // WebSocket 連接
 
 
 
@@ -65,12 +68,13 @@ export class Manerger extends Component {
         this.DeleteMenu.active = false;
         this.InputMenu.active = false;
 
+
         // 呼叫websocket
         // this.wss();
     }
 
     // 使用websocket串接api
-    wss(){
+    wss() {
         // wsUrl: 要連接的網址
         this.ws = new WebSocket("ws://124.222.224.186:8800");
 
@@ -85,12 +89,12 @@ export class Manerger extends Component {
             // 後端回傳資料send
             this.ws.send("ABC");
         }
-        
+
         // 出現網路錯誤
         this.ws.onerror = (event) => {
             console.log(`websock 連線錯誤: ${event}`)
         }
-        
+
         // ws連線關閉
         this.ws.onclose = (event) => {
             console.log(`websock 連線關閉: ${event}`)
@@ -174,6 +178,13 @@ export class Manerger extends Component {
         } else {
             // console.log("請輸入文字");
             this.InputMenu.active = true;
+
+            // 使用i18n控制警告視窗文字
+            console.log(this.warningText.getComponent(LocalizedLabel)._key)
+            this.warningText.getComponent(LocalizedLabel)._key = "warning.login";
+            // 即時更新LocalizedLabel._key
+            // this.warningText.getComponent(LocalizedLabel).updateLabel();
+            // console.log(this.warningText.getComponent(LocalizedLabel)._key);
         }
 
 
